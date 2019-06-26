@@ -5,8 +5,8 @@ resource "aws_s3_bucket" "lambda" {
   }
   lifecycle_rule {
     abort_incomplete_multipart_upload_days = 7
-    id      = "versions"
-    enabled = true
+    id                                     = "versions"
+    enabled                                = true
     expiration {
       expired_object_delete_marker = true
     }
@@ -19,7 +19,7 @@ resource "aws_s3_bucket" "lambda" {
     }
   }
   logging {
-    target_bucket = "${var.log_bucket_id}"
+    target_bucket = var.log_bucket_id
     target_prefix = "s3/${var.name_prefix}-lambda-functions/"
   }
   versioning {
@@ -27,101 +27,103 @@ resource "aws_s3_bucket" "lambda" {
   }
 }
 
-data "aws_caller_identity" "current" {}
+data "aws_caller_identity" "current" {
+}
 
 data "aws_iam_policy_document" "lambda" {
   statement {
     actions = [
-      "s3:*"
+      "s3:*",
     ]
     condition {
       test = "Bool"
       values = [
-        "false"
+        "false",
       ]
       variable = "aws:SecureTransport"
     }
     effect = "Deny"
     principals {
       identifiers = [
-        "*"
+        "*",
       ]
       type = "AWS"
     }
     resources = [
-      "${aws_s3_bucket.lambda.arn}",
-      "${aws_s3_bucket.lambda.arn}/*"
+      aws_s3_bucket.lambda.arn,
+      "${aws_s3_bucket.lambda.arn}/*",
     ]
     sid = "DenyUnsecuredTransport"
   }
   statement {
     actions = [
-      "s3:PutObject"
+      "s3:PutObject",
     ]
     condition {
       test = "StringNotEquals"
       values = [
-        "AES256"
+        "AES256",
       ]
       variable = "s3:x-amz-server-side-encryption"
     }
     effect = "Deny"
     principals {
       identifiers = [
-        "*"
+        "*",
       ]
       type = "AWS"
     }
     resources = [
-      "${aws_s3_bucket.lambda.arn}",
-      "${aws_s3_bucket.lambda.arn}/*"
+      aws_s3_bucket.lambda.arn,
+      "${aws_s3_bucket.lambda.arn}/*",
     ]
     sid = "DenyIncorrectEncryptionHeader"
   }
   statement {
     actions = [
-      "s3:PutObject"
+      "s3:PutObject",
     ]
     condition {
       test = "Null"
       values = [
-        "true"
+        "true",
       ]
       variable = "s3:x-amz-server-side-encryption"
     }
     effect = "Deny"
     principals {
       identifiers = [
-        "*"
+        "*",
       ]
       type = "AWS"
     }
     resources = [
-      "${aws_s3_bucket.lambda.arn}",
-      "${aws_s3_bucket.lambda.arn}/*"
+      aws_s3_bucket.lambda.arn,
+      "${aws_s3_bucket.lambda.arn}/*",
     ]
     sid = "DenyUnencryptedObjectUploads"
   }
   statement {
     actions = [
-      "s3:GetObject*"
+      "s3:GetObject*",
     ]
     principals {
-      identifiers = [
+      identifiers = flatten([
         "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root",
-        "${var.cross_account_users}"
-      ]
+        var.cross_account_users,
+      ])
       type = "AWS"
     }
     resources = [
-      "${aws_s3_bucket.lambda.arn}",
-      "${aws_s3_bucket.lambda.arn}/*"
+      aws_s3_bucket.lambda.arn,
+      "${aws_s3_bucket.lambda.arn}/*",
     ]
     sid = "AllowCrossAccountAccess"
   }
 }
 
 resource "aws_s3_bucket_policy" "lambda" {
-  bucket = "${aws_s3_bucket.lambda.id}"
-  policy = "${data.aws_iam_policy_document.lambda.json}"
+  bucket = aws_s3_bucket.lambda.id
+  policy = data.aws_iam_policy_document.lambda.json
 }
+

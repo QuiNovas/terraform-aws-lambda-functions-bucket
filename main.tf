@@ -1,33 +1,37 @@
 resource "aws_s3_bucket" "lambda" {
-  bucket = "${var.name_prefix}-lambda-functions"
+  bucket = "${var.name_prefix}${var.name_suffix}"
+
   lifecycle {
     prevent_destroy = true
   }
+
   lifecycle_rule {
     abort_incomplete_multipart_upload_days = 7
     id                                     = "versions"
     enabled                                = true
+
     expiration {
       expired_object_delete_marker = true
     }
+
     noncurrent_version_expiration {
       days = 60
     }
+
     noncurrent_version_transition {
       days          = 30
       storage_class = "GLACIER"
     }
   }
+
   logging {
     target_bucket = var.log_bucket_id
-    target_prefix = "s3/${var.name_prefix}-lambda-functions/"
+    target_prefix = "s3/${var.name_prefix}${var.name_suffix}"
   }
+
   versioning {
     enabled = true
   }
-}
-
-data "aws_caller_identity" "current" {
 }
 
 data "aws_iam_policy_document" "lambda" {
@@ -127,3 +131,11 @@ resource "aws_s3_bucket_policy" "lambda" {
   policy = data.aws_iam_policy_document.lambda.json
 }
 
+resource "aws_s3_bucket_public_access_block" "lambda" {
+  count                   = var.block_all_public_access ? 1 : 0
+  bucket                  = aws_s3_bucket.lambda.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}

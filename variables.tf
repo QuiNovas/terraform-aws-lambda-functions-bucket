@@ -9,6 +9,14 @@ variable "log_bucket_id" {
   type        = string
 }
 
+
+variable "logging" {
+  description = "object containing access bucket logging configuration."
+  type        = map(string)
+  default     = {}
+}
+
+
 variable "name_prefix" {
   description = "The name prefix to use when creating resource names"
   type        = string

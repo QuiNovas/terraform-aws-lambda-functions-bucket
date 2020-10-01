@@ -22,3 +22,14 @@ variable "name_prefix" {
   type        = string
 }
 
+variable "name_suffix" {
+  description = "The name suffix for resource names"
+  type        = string
+  default     = "-lambda-functions"
+}
+
+variable "block_all_public_access" {
+  description = "Enable this too ensure that public access to all your S3 bucket and objects is blocked"
+  type        = string
+  default     = true
+}

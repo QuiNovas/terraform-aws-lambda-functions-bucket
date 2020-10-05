@@ -11,9 +11,9 @@ variable "log_bucket_id" {
 
 
 variable "logging" {
-  description = "object containing access bucket logging configuration."
-  type        = map(string)
-  default     = {}
+  description = "whether server access logging should be enabled or disabled.by default it is enabled."
+  type        = bool
+  default     = true
 }
 
 

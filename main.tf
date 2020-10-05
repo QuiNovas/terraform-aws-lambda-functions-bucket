@@ -24,9 +24,13 @@ resource "aws_s3_bucket" "lambda" {
     }
   }
 
-  logging {
-    target_bucket = var.log_bucket_id
-    target_prefix = "s3/${var.name_prefix}${var.name_suffix}"
+  dynamic "logging" {
+    for_each = var.logging == true ? [var.logging] : []
+
+    content {
+      target_bucket = var.log_bucket_id
+      target_prefix = "s3/${var.name_prefix}${var.name_suffix}"
+    }
   }
 
   versioning {

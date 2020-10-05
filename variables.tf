@@ -9,6 +9,14 @@ variable "log_bucket_id" {
   type        = string
 }
 
+
+variable "logging" {
+  description = "whether server access logging should be enabled or disabled.by default it is enabled."
+  type        = bool
+  default     = true
+}
+
+
 variable "name_prefix" {
   description = "The name prefix to use when creating resource names"
   type        = string

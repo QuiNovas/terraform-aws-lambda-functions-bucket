@@ -5,8 +5,9 @@ variable "cross_account_users" {
 }
 
 variable "log_bucket_id" {
-  description = "The bucket to log S3 logs to."
+  description = "The bucket to log S3 logs to. Required if Logging is enabled"
   type        = string
+  default     = ""
 }
 
 
@@ -15,7 +16,6 @@ variable "logging" {
   type        = bool
   default     = true
 }
-
 
 variable "name_prefix" {
   description = "The name prefix to use when creating resource names"

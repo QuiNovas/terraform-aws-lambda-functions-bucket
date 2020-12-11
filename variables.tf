@@ -10,6 +10,11 @@ variable "log_bucket_id" {
   default     = ""
 }
 
+variable "block_all_public_access" {
+  description = "Enable this too ensure that public access to all your S3 bucket and objects is blocked"
+  type        = string
+  default     = true
+}
 
 variable "logging" {
   description = "whether server access logging should be enabled or disabled.by default it is enabled."
@@ -28,8 +33,20 @@ variable "name_suffix" {
   default     = "-lambda-functions"
 }
 
-variable "block_all_public_access" {
-  description = "Enable this too ensure that public access to all your S3 bucket and objects is blocked"
-  type        = string
-  default     = true
+variable "replication_enabled" {
+  description = "Enable or Disable replication to destination buckets. Basic root level replication. This module supports only non kms objects"
+  type        = bool
+  default     = false
+}
+
+variable "destination_buckets" {
+  description = "List of buckets for replication"
+  type        = list(string)
+  default     = []
+}
+
+variable "tags" {
+  description = "(Optional) A mapping of tags to assign to the resources"
+  type        = map(string)
+  default     = {}
 }

@@ -33,9 +33,33 @@ resource "aws_s3_bucket" "lambda" {
     }
   }
 
+  dynamic "replication_configuration" {
+    for_each = var.replication_enabled == true ? [var.replication_enabled] : []
+    content {
+      role = aws_iam_role.s3_crr.0.arn
+
+      dynamic "rules" {
+        for_each = var.destination_buckets
+        content {
+          id       = rules.value
+          priority = index(var.destination_buckets, rules.value)
+          status   = "Enabled"
+
+          destination {
+            bucket = "arn:aws:s3:::${rules.value}"
+          }
+
+          filter {}
+        }
+      }
+    }
+  }
+
   versioning {
     enabled = true
   }
+
+  tags = var.tags
 }
 
 data "aws_iam_policy_document" "lambda" {

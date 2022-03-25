@@ -5,61 +5,71 @@ resource "aws_s3_bucket" "lambda" {
     prevent_destroy = true
   }
 
-  lifecycle_rule {
-    abort_incomplete_multipart_upload_days = 7
-    id                                     = "versions"
-    enabled                                = true
+  tags = var.tags
+}
+
+resource "aws_s3_bucket_replication_configuration" "lambda" {
+  count = var.replication_enabled ? 1 : 0
+  # Must have bucket versioning enabled first
+  depends_on = [aws_s3_bucket_versioning.lambda]
+
+  role   = aws_iam_role.s3_crr.0.arn
+  bucket = aws_s3_bucket.lambda.id
+  dynamic "rule" {
+    for_each = var.destination_buckets
+    content {
+      id       = rules.value
+      priority = index(var.destination_buckets, rule.value)
+      status   = "Enabled"
+
+      destination {
+        bucket = "arn:aws:s3:::${rule.value}"
+      }
+
+      filter {}
+    }
+  }
+}
+
+resource "aws_s3_bucket_logging" "lambda" {
+  count         = var.logging ? 1 : 0
+  bucket        = aws_s3_bucket.lambda.id
+  target_bucket = var.log_bucket_id
+  target_prefix = "s3/${var.name_prefix}${var.name_suffix}/"
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "lambda" {
+  bucket = aws_s3_bucket.lambda.bucket
+
+  rule {
+    id = "versions"
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
 
     expiration {
       expired_object_delete_marker = true
     }
 
+    status = "Enabled"
+
     noncurrent_version_expiration {
-      days = 60
+      noncurrent_days = 60
     }
 
     noncurrent_version_transition {
-      days          = 30
-      storage_class = "GLACIER"
+      noncurrent_days = 30
+      storage_class   = "GLACIER"
     }
   }
+}
 
-  dynamic "logging" {
-    for_each = var.logging == true ? [var.logging] : []
-
-    content {
-      target_bucket = var.log_bucket_id
-      target_prefix = "s3/${var.name_prefix}${var.name_suffix}/"
-    }
+resource "aws_s3_bucket_versioning" "lambda" {
+  bucket = aws_s3_bucket.lambda.id
+  versioning_configuration {
+    status = "Enabled"
   }
-
-  dynamic "replication_configuration" {
-    for_each = var.replication_enabled == true ? [var.replication_enabled] : []
-    content {
-      role = aws_iam_role.s3_crr.0.arn
-
-      dynamic "rules" {
-        for_each = var.destination_buckets
-        content {
-          id       = rules.value
-          priority = index(var.destination_buckets, rules.value)
-          status   = "Enabled"
-
-          destination {
-            bucket = "arn:aws:s3:::${rules.value}"
-          }
-
-          filter {}
-        }
-      }
-    }
-  }
-
-  versioning {
-    enabled = true
-  }
-
-  tags = var.tags
 }
 
 data "aws_iam_policy_document" "lambda" {
